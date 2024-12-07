@@ -1,0 +1,32 @@
+name: Issue Check
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci
+      - run: |
+          mkdir tmp
+          curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm | \
+               jq -r '.[].download_url' | \
+               xargs -I {} curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -o "tmp/$(basename {})" {}
+          for f in tmp/*; do
+            npx github-issue-tower-defence-management -t schedule -c "$f" &> /dev/null &
+          done
+          wait
