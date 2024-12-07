@@ -22,11 +22,11 @@ jobs:
           mkdir tmp
           for url in $(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                        -H "Accept: application/vnd.github.v3+json" \
-                       https://api.github.com/repos/HiromiShikata/automation-cofig/contents/tdpm | \
+                       https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm | \
                        jq -r '.[].name'); do
             curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                  -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/HiromiShikata/automation-cofig/contents/tdpm/$url" | \
+                 "https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm/$url" | \
             jq -r '.content' | base64 -d > "tmp/$url"
           
             npx github-issue-tower-defence-management -t schedule -c "tmp/$url" &> /dev/null &
