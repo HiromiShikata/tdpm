@@ -32,6 +32,6 @@ jobs:
             echo "$url"
             ls -la tmp
 
-            npx github-issue-tower-defence-management -t schedule -c "tmp/$url" &> /dev/null &
+            npx github-issue-tower-defence-management -t schedule -c "tmp/$url"
           done
           wait
