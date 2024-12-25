@@ -21,17 +21,17 @@ jobs:
       - run: npm ci
       - run: |
           mkdir tmp
-          for url in $(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          for pj in $(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                        -H "Accept: application/vnd.github.v3+json" \
                        https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm | \
                        jq -r '.[].name'); do
             curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                  -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm/$url" | \
-            jq -r '.content' | base64 -d > "tmp/$url"
-            echo "$url"
+                 "https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm/$pj" | \
+            jq -r '.content' | base64 -d > "tmp/$pj"
+            echo "$pj"
             ls -la tmp
 
-            npx github-issue-tower-defence-management -t schedule -c "tmp/$url"
+            npx github-issue-tower-defence-management -t schedule -c "tmp/$pj"
           done
           wait
