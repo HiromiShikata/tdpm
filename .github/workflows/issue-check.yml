@@ -29,6 +29,6 @@ jobs:
                  "https://api.github.com/repos/HiromiShikata/automation-config/contents/tdpm/$url" | \
             jq -r '.content' | base64 -d > "tmp/$url"
 
-            npx github-issue-tower-defence-management -t schedule -c "tmp/$url" &> /dev/null &
+            npx github-issue-tower-defence-management -t schedule -c "tmp/$url" -v &> /dev/null &
           done
           wait
