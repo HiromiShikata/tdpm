@@ -12,6 +12,7 @@
 1. Set secrets (optional)
 
    https://github.com/HiromiShikata/tdpm/settings/secrets/actions
+
    - [GH_TOKEN](https://github.com/settings/tokens)
    - [NPM_TOKEN](https://www.npmjs.com/settings/hiromi/tokens)
 
