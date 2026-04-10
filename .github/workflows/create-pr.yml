@@ -8,6 +8,10 @@ on:
 jobs:
   create_and_enable_automerge:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
