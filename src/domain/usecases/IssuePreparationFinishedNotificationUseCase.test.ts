@@ -69,6 +69,19 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
       );
     });
 
+    test('includes conflicts in rejections when PR has conflicts', async () => {
+      const pr = nonApprovedPr({ isConflicted: true, isPassedAllCiJob: true });
+      const { repository } = createMockRepository([pr]);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
+
+      const result = await useCase.run(issueUrl);
+
+      expect(result.rejections).toContain(`${pr.url}: has conflicts`);
+      expect(result.approvedPrUrl).toBeNull();
+    });
+
     test('includes CI failure in rejections when CI is not passed', async () => {
       const pr = nonApprovedPr({ isPassedAllCiJob: false });
       const { repository } = createMockRepository([pr]);
