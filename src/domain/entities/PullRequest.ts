@@ -3,5 +3,5 @@ export type PullRequest = {
   isConflicted: boolean;
   isPassedAllCiJob: boolean;
   isResolvedAllReviewComments: boolean;
-  nextActionDate: Date | null;
+  dependedIssueUrl: string | null;
 };

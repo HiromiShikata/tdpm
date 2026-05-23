@@ -6,18 +6,18 @@ const createMockRepository = (
   prs: PullRequest[],
 ): {
   repository: PullRequestRepository;
-  setNextActionDate: jest.Mock;
+  setDependedIssueUrl: jest.Mock;
 } => {
-  const setNextActionDate = jest
-    .fn<Promise<void>, [string, Date]>()
+  const setDependedIssueUrl = jest
+    .fn<Promise<void>, [string, string]>()
     .mockResolvedValue(undefined);
   const repository: PullRequestRepository = {
     findOpenByIssueUrl: jest
       .fn<Promise<PullRequest[]>, [string]>()
       .mockResolvedValue(prs),
-    setNextActionDate,
+    setDependedIssueUrl,
   };
-  return { repository, setNextActionDate };
+  return { repository, setDependedIssueUrl };
 };
 
 const nonApprovedPr = (overrides: Partial<PullRequest> = {}): PullRequest => ({
@@ -25,7 +25,7 @@ const nonApprovedPr = (overrides: Partial<PullRequest> = {}): PullRequest => ({
   isConflicted: false,
   isPassedAllCiJob: false,
   isResolvedAllReviewComments: true,
-  nextActionDate: null,
+  dependedIssueUrl: null,
   ...overrides,
 });
 
@@ -34,39 +34,25 @@ const approvedPr = (overrides: Partial<PullRequest> = {}): PullRequest => ({
   isConflicted: false,
   isPassedAllCiJob: true,
   isResolvedAllReviewComments: true,
-  nextActionDate: null,
+  dependedIssueUrl: null,
   ...overrides,
 });
 
 describe('IssuePreparationFinishedNotificationUseCase', () => {
   const issueUrl = 'https://github.com/owner/repo/issues/10';
-  const fixedNow = new Date('2026-05-23T00:00:00.000Z');
-  const expectedNextActionDate = new Date('2026-06-23T00:00:00.000Z');
 
-  beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(fixedNow);
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  describe('fail-safe Next Action Date for non-approved PR', () => {
-    test('sets Next Action Date one month from now when PR has no nextActionDate', async () => {
+  describe('fail-safe depended issue URL for non-approved PR', () => {
+    test('sets depended issue URL to the issue URL when PR has no dependedIssueUrl', async () => {
       const pr = nonApprovedPr();
-      const { repository, setNextActionDate } = createMockRepository([pr]);
+      const { repository, setDependedIssueUrl } = createMockRepository([pr]);
       const useCase = new IssuePreparationFinishedNotificationUseCase(
         repository,
       );
 
       await useCase.run(issueUrl);
 
-      expect(setNextActionDate).toHaveBeenCalledTimes(1);
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        pr.url,
-        expectedNextActionDate,
-      );
+      expect(setDependedIssueUrl).toHaveBeenCalledTimes(1);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(pr.url, issueUrl);
     });
 
     test('includes conflicts in rejections when PR has conflicts', async () => {
@@ -114,28 +100,25 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
     });
   });
 
-  describe('approved PR still receives Next Action Date', () => {
-    test('sets Next Action Date for approved PR when nextActionDate is null', async () => {
+  describe('approved PR still receives depended issue URL', () => {
+    test('sets depended issue URL for approved PR when dependedIssueUrl is null', async () => {
       const pr = approvedPr();
-      const { repository, setNextActionDate } = createMockRepository([pr]);
+      const { repository, setDependedIssueUrl } = createMockRepository([pr]);
       const useCase = new IssuePreparationFinishedNotificationUseCase(
         repository,
       );
 
       const result = await useCase.run(issueUrl);
 
-      expect(setNextActionDate).toHaveBeenCalledTimes(1);
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        pr.url,
-        expectedNextActionDate,
-      );
+      expect(setDependedIssueUrl).toHaveBeenCalledTimes(1);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(pr.url, issueUrl);
       expect(result.approvedPrUrl).toBe(pr.url);
       expect(result.rejections).toHaveLength(0);
     });
   });
 
   describe('multiple PRs linked to the issue', () => {
-    test('sets Next Action Date for every PR when all have no nextActionDate', async () => {
+    test('sets depended issue URL for every PR when all have no dependedIssueUrl', async () => {
       const pr1 = nonApprovedPr({
         url: 'https://github.com/owner/repo/pull/1',
       });
@@ -144,7 +127,7 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
         url: 'https://github.com/owner/repo/pull/3',
         isConflicted: true,
       });
-      const { repository, setNextActionDate } = createMockRepository([
+      const { repository, setDependedIssueUrl } = createMockRepository([
         pr1,
         pr2,
         pr3,
@@ -155,49 +138,40 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
 
       await useCase.run(issueUrl);
 
-      expect(setNextActionDate).toHaveBeenCalledTimes(3);
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        pr1.url,
-        expectedNextActionDate,
-      );
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        pr2.url,
-        expectedNextActionDate,
-      );
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        pr3.url,
-        expectedNextActionDate,
-      );
+      expect(setDependedIssueUrl).toHaveBeenCalledTimes(3);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(pr1.url, issueUrl);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(pr2.url, issueUrl);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(pr3.url, issueUrl);
     });
   });
 
-  describe('PR with existing Next Action Date is not overwritten', () => {
-    test('does not call setNextActionDate when PR already has nextActionDate set', async () => {
-      const existingDate = new Date('2026-06-01');
-      const pr = nonApprovedPr({ nextActionDate: existingDate });
-      const { repository, setNextActionDate } = createMockRepository([pr]);
+  describe('PR with existing depended issue URL is not overwritten', () => {
+    test('does not call setDependedIssueUrl when PR already has dependedIssueUrl set', async () => {
+      const pr = nonApprovedPr({
+        dependedIssueUrl: 'https://github.com/owner/repo/issues/5',
+      });
+      const { repository, setDependedIssueUrl } = createMockRepository([pr]);
       const useCase = new IssuePreparationFinishedNotificationUseCase(
         repository,
       );
 
       await useCase.run(issueUrl);
 
-      expect(setNextActionDate).not.toHaveBeenCalled();
+      expect(setDependedIssueUrl).not.toHaveBeenCalled();
     });
 
-    test('sets Next Action Date only for PRs without one when mixed', async () => {
-      const existingDate = new Date('2026-06-01');
-      const prWithDate = nonApprovedPr({
+    test('sets depended issue URL only for PRs without one when mixed', async () => {
+      const prWithUrl = nonApprovedPr({
         url: 'https://github.com/owner/repo/pull/1',
-        nextActionDate: existingDate,
+        dependedIssueUrl: 'https://github.com/owner/repo/issues/5',
       });
-      const prWithoutDate = approvedPr({
+      const prWithoutUrl = approvedPr({
         url: 'https://github.com/owner/repo/pull/2',
-        nextActionDate: null,
+        dependedIssueUrl: null,
       });
-      const { repository, setNextActionDate } = createMockRepository([
-        prWithDate,
-        prWithoutDate,
+      const { repository, setDependedIssueUrl } = createMockRepository([
+        prWithUrl,
+        prWithoutUrl,
       ]);
       const useCase = new IssuePreparationFinishedNotificationUseCase(
         repository,
@@ -205,17 +179,17 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
 
       await useCase.run(issueUrl);
 
-      expect(setNextActionDate).toHaveBeenCalledTimes(1);
-      expect(setNextActionDate).toHaveBeenCalledWith(
-        prWithoutDate.url,
-        expectedNextActionDate,
+      expect(setDependedIssueUrl).toHaveBeenCalledTimes(1);
+      expect(setDependedIssueUrl).toHaveBeenCalledWith(
+        prWithoutUrl.url,
+        issueUrl,
       );
     });
   });
 
   describe('no open PRs', () => {
     test('returns null approvedPrUrl and empty rejections when no open PRs', async () => {
-      const { repository, setNextActionDate } = createMockRepository([]);
+      const { repository, setDependedIssueUrl } = createMockRepository([]);
       const useCase = new IssuePreparationFinishedNotificationUseCase(
         repository,
       );
@@ -224,7 +198,7 @@ describe('IssuePreparationFinishedNotificationUseCase', () => {
 
       expect(result.approvedPrUrl).toBeNull();
       expect(result.rejections).toHaveLength(0);
-      expect(setNextActionDate).not.toHaveBeenCalled();
+      expect(setDependedIssueUrl).not.toHaveBeenCalled();
     });
   });
 });

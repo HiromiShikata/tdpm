@@ -36,13 +36,8 @@ export class IssuePreparationFinishedNotificationUseCase {
         }
       }
 
-      if (pr.nextActionDate === null) {
-        const nextActionDate = new Date();
-        nextActionDate.setMonth(nextActionDate.getMonth() + 1);
-        await this.pullRequestRepository.setNextActionDate(
-          pr.url,
-          nextActionDate,
-        );
+      if (pr.dependedIssueUrl === null) {
+        await this.pullRequestRepository.setDependedIssueUrl(pr.url, issueUrl);
       }
     }
 
