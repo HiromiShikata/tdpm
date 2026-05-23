@@ -1,4 +1,4 @@
-import { NotifyFinishedIssuePreparationUseCase } from './NotifyFinishedIssuePreparationUseCase';
+import { IssuePreparationFinishedNotificationUseCase } from './IssuePreparationFinishedNotificationUseCase';
 import { PullRequestRepository } from './adapter-interfaces/repositories/PullRequestRepository';
 import { PullRequest } from '../entities/PullRequest';
 
@@ -38,7 +38,7 @@ const approvedPr = (overrides: Partial<PullRequest> = {}): PullRequest => ({
   ...overrides,
 });
 
-describe('NotifyFinishedIssuePreparationUseCase', () => {
+describe('IssuePreparationFinishedNotificationUseCase', () => {
   const issueUrl = 'https://github.com/owner/repo/issues/10';
   const fixedNow = new Date('2026-05-23T00:00:00.000Z');
   const expectedNextActionDate = new Date('2026-06-23T00:00:00.000Z');
@@ -56,7 +56,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
     test('sets Next Action Date one month from now when PR has no nextActionDate', async () => {
       const pr = nonApprovedPr();
       const { repository, setNextActionDate } = createMockRepository([pr]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       await useCase.run(issueUrl);
 
@@ -70,7 +72,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
     test('includes CI failure in rejections when CI is not passed', async () => {
       const pr = nonApprovedPr({ isPassedAllCiJob: false });
       const { repository } = createMockRepository([pr]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       const result = await useCase.run(issueUrl);
 
@@ -84,7 +88,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
         isResolvedAllReviewComments: false,
       });
       const { repository } = createMockRepository([pr]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       const result = await useCase.run(issueUrl);
 
@@ -99,7 +105,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
     test('sets Next Action Date for approved PR when nextActionDate is null', async () => {
       const pr = approvedPr();
       const { repository, setNextActionDate } = createMockRepository([pr]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       const result = await useCase.run(issueUrl);
 
@@ -128,7 +136,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
         pr2,
         pr3,
       ]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       await useCase.run(issueUrl);
 
@@ -153,7 +163,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
       const existingDate = new Date('2026-06-01');
       const pr = nonApprovedPr({ nextActionDate: existingDate });
       const { repository, setNextActionDate } = createMockRepository([pr]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       await useCase.run(issueUrl);
 
@@ -174,7 +186,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
         prWithDate,
         prWithoutDate,
       ]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       await useCase.run(issueUrl);
 
@@ -189,7 +203,9 @@ describe('NotifyFinishedIssuePreparationUseCase', () => {
   describe('no open PRs', () => {
     test('returns null approvedPrUrl and empty rejections when no open PRs', async () => {
       const { repository, setNextActionDate } = createMockRepository([]);
-      const useCase = new NotifyFinishedIssuePreparationUseCase(repository);
+      const useCase = new IssuePreparationFinishedNotificationUseCase(
+        repository,
+      );
 
       const result = await useCase.run(issueUrl);
 

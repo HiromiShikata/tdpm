@@ -1,14 +1,16 @@
 import { PullRequestRepository } from './adapter-interfaces/repositories/PullRequestRepository';
 
-export type NotifyFinishedIssuePreparationResult = {
+export type IssuePreparationFinishedNotificationResult = {
   approvedPrUrl: string | null;
   rejections: string[];
 };
 
-export class NotifyFinishedIssuePreparationUseCase {
+export class IssuePreparationFinishedNotificationUseCase {
   constructor(private readonly pullRequestRepository: PullRequestRepository) {}
 
-  async run(issueUrl: string): Promise<NotifyFinishedIssuePreparationResult> {
+  async run(
+    issueUrl: string,
+  ): Promise<IssuePreparationFinishedNotificationResult> {
     const openPrs =
       await this.pullRequestRepository.findOpenByIssueUrl(issueUrl);
 
