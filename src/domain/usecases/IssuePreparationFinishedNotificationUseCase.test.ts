@@ -41,7 +41,7 @@ const approvedPr = (overrides: Partial<PullRequest> = {}): PullRequest => ({
 describe('IssuePreparationFinishedNotificationUseCase', () => {
   const issueUrl = 'https://github.com/owner/repo/issues/10';
 
-  describe('fail-safe depended issue URL for non-approved PR', () => {
+  describe('non-approved PR receives depended issue URL', () => {
     test('sets depended issue URL to the issue URL when PR has no dependedIssueUrl', async () => {
       const pr = nonApprovedPr();
       const { repository, setDependedIssueUrl } = createMockRepository([pr]);
