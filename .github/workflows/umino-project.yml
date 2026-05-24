@@ -83,8 +83,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         if: >-
-          (github.event_name == 'issues' && github.event.issue.state == 'open') ||
-          (github.event_name == 'pull_request' && github.event.pull_request.state == 'open') &&
+          ((github.event_name == 'issues' && github.event.issue.state == 'open') ||
+          (github.event_name == 'pull_request' && github.event.pull_request.state == 'open')) &&
           (github.event.action == 'opened' || github.event.action == 'reopened' ||
           github.event.action == 'assigned' || github.event.action == 'unassigned')
       - run: |
@@ -247,12 +247,19 @@ jobs:
     if: >-
       (github.event_name == 'pull_request')
     steps:
+      - name: Generate hs-bot-gh-ap installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.HS_BOT_GH_AP_APP_ID }}
+          private-key: ${{ secrets.HS_BOT_GH_AP_PRIVATE_KEY }}
+          owner: HiromiShikata
       - uses: nearform-actions/github-action-check-linked-issues@v1
         id: check-linked-issues
         if: github.event.pull_request.user.login != 'dependabot[bot]'
         with:
           exclude-branches: 'release/**, dependabot/**, project-common/**, renovate/**'
-          github-token: ${{ github.token }}
+          github-token: ${{ steps.app-token.outputs.token }}
           loose-matching: true
           skip-linked-issues-check-label: ''
       - name: Get the output
